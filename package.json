@@ -57,7 +57,7 @@
     "postinstall": "husky install",
     "postpack": "pinst --enable",
     "start": "ladle serve",
-    "generateShirtdata": "echo \"export const datauri = \\`$(npx datauri-cli resources/shirt.glb)\\`\" > src/shirtdata.ts"
+    "generateShirtdata": "echo \"export const shirturi = \\`$(npx datauri-cli resources/shirt.glb)\\`\" > src/shirtdata.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.10.4",
