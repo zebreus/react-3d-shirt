@@ -13,6 +13,7 @@
   "license": "MIT",
   "type": "module",
   "devDependencies": {
+    "@emotion/eslint-plugin": "^11.10.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@types/eslint": "^8.4.6",
@@ -52,6 +53,7 @@
     "postpack": "pinst --enable"
   },
   "dependencies": {
+    "@emotion/react": "^11.10.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }

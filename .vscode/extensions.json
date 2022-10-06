@@ -4,6 +4,7 @@
     "eamodio.gitlens",
     "wix.vscode-import-cost",
     "orta.vscode-jest",
-    "esbenp.prettier-vscode"
+    "esbenp.prettier-vscode",
+    "styled-components.vscode-styled-components"
   ]
 }

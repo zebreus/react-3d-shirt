@@ -8,7 +8,7 @@
     "plugin:react-hooks/recommended",
     "plugin:jsx-a11y/recommended"
   ],
-  "plugins": ["import", "react", "react-hooks", "jsx-a11y"],
+  "plugins": ["import", "react", "react-hooks", "jsx-a11y", "@emotion"],
   "rules": {
     "no-undef": "off",
     "no-unused-vars": [
@@ -68,7 +68,9 @@
     "import/no-unassigned-import": "error",
     "jest/expect-expect": "off",
     "react/no-unknown-property": "off",
-    "react/prop-types": "off"
+    "react/prop-types": "off",
+    "@emotion/no-vanilla": "error",
+    "@emotion/syntax-preference": ["error", "string"]
   },
   "settings": {
     "import/external-module-folders": ["node_modules", "node_modules/@types"],
