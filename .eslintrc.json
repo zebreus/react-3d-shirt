@@ -1,6 +1,14 @@
 {
-  "extends": ["eslint:recommended", "plugin:import/recommended", "plugin:jest/recommended"],
-  "plugins": ["import"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:import/recommended",
+    "plugin:jest/recommended",
+    "plugin:react/recommended",
+    "plugin:react/jsx-runtime",
+    "plugin:react-hooks/recommended",
+    "plugin:jsx-a11y/recommended"
+  ],
+  "plugins": ["import", "react", "react-hooks", "jsx-a11y"],
   "rules": {
     "no-undef": "off",
     "no-unused-vars": [
@@ -58,7 +66,9 @@
     "import/no-amd": "error",
     "import/no-mutable-exports": "error",
     "import/no-unassigned-import": "error",
-    "jest/expect-expect": "off"
+    "jest/expect-expect": "off",
+    "react/no-unknown-property": "off",
+    "react/prop-types": "off"
   },
   "settings": {
     "import/external-module-folders": ["node_modules", "node_modules/@types"],
@@ -71,6 +81,9 @@
         "project": "<root>/tsconfig.json"
       },
       "node": true
+    },
+    "react": {
+      "version": "detect"
     }
   },
   "overrides": [

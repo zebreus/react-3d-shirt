@@ -7,5 +7,7 @@
     "global": {
       "statements": 95
     }
-  }
+  },
+  "testEnvironment": "jsdom",
+  "setupFilesAfterEnv": ["<rootDir>/jest-setup.ts"]
 }
