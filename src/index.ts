@@ -1,1 +1,1 @@
-export { Button } from "Button"
+export { Shirt } from "Shirt"

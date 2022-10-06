@@ -22,9 +22,11 @@
     "@types/node": "^18.7.18",
     "@types/react": "^18.0.21",
     "@types/react-dom": "^18.0.6",
+    "@types/three": "^0.144.0",
     "@typescript-eslint/eslint-plugin": "^5.37.0",
     "@typescript-eslint/parser": "^5.37.0",
     "@zebreus/resolve-tspaths": "^0.8.10",
+    "datauri-cli": "^4.1.0",
     "eslint": "^8.23.1",
     "eslint-import-resolver-typescript": "^3.5.1",
     "eslint-plugin-import": "^2.26.0",
@@ -54,10 +56,14 @@
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
     "postinstall": "husky install",
     "postpack": "pinst --enable",
-    "start": "ladle serve"
+    "start": "ladle serve",
+    "generateShirtdata": "echo \"export const datauri = \\`$(npx datauri-cli resources/shirt.glb)\\`\" > src/shirtdata.ts"
   },
   "dependencies": {
-    "@emotion/react": "^11.10.4"
+    "@emotion/react": "^11.10.4",
+    "@react-three/drei": "^9.34.1",
+    "@react-three/fiber": "^8.8.9",
+    "three": "^0.145.0"
   },
   "peerDependencies": {
     "react": "18.2.0",
