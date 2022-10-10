@@ -51,9 +51,10 @@ const ShirtMaterial = ({ url }: { url: string | undefined }) => {
 type BasicShirtProps = {
   color: string
   url: string | undefined
+  onHoverChange?: (hover: boolean) => void
 }
 
-export const BasicShirt = ({ url, color }: BasicShirtProps) => {
+export const BasicShirt = ({ url, color, onHoverChange }: BasicShirtProps) => {
   const { nodes } = useGLTF(shirturi)
 
   return (
@@ -64,6 +65,8 @@ export const BasicShirt = ({ url, color }: BasicShirtProps) => {
       /** @ts-expect-error: TODO: Look into why ts thinks there is no geometry property*/
       geometry={nodes["shirt"]?.geometry}
       rotation={[0.5 * Math.PI + 0.1, 0, 0]}
+      onPointerOver={onHoverChange && (() => onHoverChange(true))}
+      onPointerOut={onHoverChange && (() => onHoverChange(false))}
     >
       <meshStandardMaterial color={color} roughness={1} side={DoubleSide} />
       <Decal position={[0, 1, 0]} rotation={Math.PI} scale={2}>

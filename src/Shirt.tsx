@@ -1,5 +1,6 @@
 import { Canvas } from "@react-three/fiber"
 import { BasicShirt } from "BasicShirt"
+import { useState } from "react"
 import { ShirtControls } from "ShirtControls"
 
 type ShirtProps = {
@@ -16,14 +17,22 @@ type ShirtProps = {
 }
 
 export const Shirt = ({ motif, color = "#202020", wobbleRange, wobbleSpeed, disabled }: Partial<ShirtProps>) => {
+  const [hover, setHover] = useState(false)
   return (
     <Canvas shadows>
       <ambientLight intensity={0.25} />
       <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
       <pointLight position={[-10, -5, -10]} />
-      <ShirtControls wobbleRange={wobbleRange} wobbleSpeed={wobbleSpeed} disabled={disabled} />
       <group scale={0.9}>
-        <BasicShirt url={motif} color={color} />
+        <ShirtControls wobbleRange={wobbleRange} wobbleSpeed={wobbleSpeed} disabled={disabled || !hover} />
+        <BasicShirt
+          url={motif}
+          color={color}
+          onHoverChange={hover => {
+            setHover(hover)
+            console.log({ hover })
+          }}
+        />
       </group>
     </Canvas>
   )
