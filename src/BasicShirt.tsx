@@ -2,7 +2,7 @@ import { Decal, PerspectiveCamera, RenderTexture, useGLTF, useTexture } from "@r
 import { useFrame } from "@react-three/fiber"
 import { Suspense, useRef } from "react"
 import { shirturi } from "shirtdata"
-import { DoubleSide } from "three"
+import { BufferGeometry, DoubleSide, Material, Mesh, Object3D } from "three"
 
 const UrlMaterial = ({ url }: { url: string | undefined }) => {
   const motif = useTexture(url || "")
@@ -52,13 +52,19 @@ type BasicShirtProps = {
   color: string
   url: string | undefined
   onHoverChange?: (hover: boolean) => void
+  objectRef?: React.MutableRefObject<Object3D<Event>[] | undefined>
 }
 
-export const BasicShirt = ({ url, color, onHoverChange }: BasicShirtProps) => {
+export const BasicShirt = ({ url, color, onHoverChange, objectRef }: BasicShirtProps) => {
   const { nodes } = useGLTF(shirturi)
 
   return (
     <mesh
+      ref={(ref: Object3D<Event> & Mesh<BufferGeometry, Material | Material[]>) => {
+        if (objectRef) {
+          objectRef.current = [ref]
+        }
+      }}
       castShadow
       receiveShadow
       scale={1}

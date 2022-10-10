@@ -35,3 +35,16 @@ export const WobblyShirt = () => (
     <Shirt wobbleRange={0.2} wobbleSpeed={1} />
   </>
 )
+
+export const ScrollableShirt = () => (
+  <>
+    <Shirt color="#ffffff" />
+    <div
+      style={{
+        height: 800,
+        width: 200,
+        background: "red",
+      }}
+    />
+  </>
+)
