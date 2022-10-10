@@ -31,6 +31,7 @@ export const ShirtControls = ({ wobbleSpeed = 0.3, wobbleRange = 0.07, disabled 
         maxDistance={5}
         maxPolarAngle={Math.PI - 0.5}
         minPolarAngle={0.5}
+        enablePan={false}
         onStart={() => {
           setActive(true)
           if (ref.current) {
