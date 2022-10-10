@@ -8,8 +8,13 @@ const UrlMaterial = ({ url }: { url: string | undefined }) => {
   if (!url) {
     throw new Promise(() => {})
   }
-  const motif = useTexture(url)
-  // const motif2 = useLoader(THREE.TextureLoader, url || "")
+  const motif = useTexture(url, texture => {
+    const textures = Array.isArray(texture) ? texture : [texture]
+    textures.forEach(t => {
+      t.flipY = false
+    })
+  })
+
   return (
     <meshPhongMaterial map={motif} depthTest depthWrite={false} transparent polygonOffset polygonOffsetFactor={-4} />
   )
@@ -82,7 +87,7 @@ export const BasicShirt = ({ url, color, onHoverChange, objectRef }: BasicShirtP
       onPointerOut={onHoverChange && (() => onHoverChange(false))}
     >
       <meshStandardMaterial color={color} roughness={1} side={DoubleSide} />
-      <Decal position={[0, 1, 0]} rotation={Math.PI} scale={2}>
+      <Decal position={[0, 1, 0]} rotation={0} scale={2}>
         <ShirtMaterial url={url} />
       </Decal>
     </mesh>
