@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { Shirt } from "Shirt"
 
 export const DefaultShirt = () => (
@@ -11,6 +12,22 @@ export const WithMotif = () => (
     <Shirt motif="https://picsum.photos/300/300" />
   </>
 )
+
+export const MotifLoadingTest = () => {
+  const [motif, setMotif] = useState<string | undefined>(undefined)
+  useEffect(() => {
+    setInterval(() => {
+      setMotif(prev => (prev ? undefined : "https://picsum.photos/300/300"))
+    }, 5000)
+  })
+
+  return (
+    <>
+      <h3>{motif ? motif : "none"}</h3>
+      <Shirt motif={motif} />
+    </>
+  )
+}
 
 export const ColoredShirt = () => (
   <>

@@ -5,7 +5,10 @@ import { shirturi } from "shirtdata"
 import { BufferGeometry, DoubleSide, Material, Mesh, Object3D } from "three"
 
 const UrlMaterial = ({ url }: { url: string | undefined }) => {
-  const motif = useTexture(url || "")
+  if (!url) {
+    throw new Promise(() => {})
+  }
+  const motif = useTexture(url)
   // const motif2 = useLoader(THREE.TextureLoader, url || "")
   return (
     <meshPhongMaterial map={motif} depthTest depthWrite={false} transparent polygonOffset polygonOffsetFactor={-4} />
@@ -45,7 +48,11 @@ const LoaderMaterial = () => {
 }
 
 const ShirtMaterial = ({ url }: { url: string | undefined }) => {
-  return <Suspense fallback={<LoaderMaterial />}>{url ? <UrlMaterial url={url} /> : <LoaderMaterial />}</Suspense>
+  return (
+    <Suspense fallback={<LoaderMaterial />}>
+      <UrlMaterial url={url} />
+    </Suspense>
+  )
 }
 
 type BasicShirtProps = {
