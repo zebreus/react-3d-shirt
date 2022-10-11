@@ -1,6 +1,6 @@
-import { Decal, PerspectiveCamera, RenderTexture, useGLTF, useTexture } from "@react-three/drei"
+import { Decal, PerspectiveCamera, RenderTexture, useCursor, useGLTF, useTexture } from "@react-three/drei"
 import { useFrame } from "@react-three/fiber"
-import { Suspense, useRef } from "react"
+import { Suspense, useRef, useState } from "react"
 import { shirturi } from "shirtdata"
 import { BufferGeometry, DoubleSide, Material, Mesh, Object3D } from "three"
 
@@ -63,12 +63,15 @@ const ShirtMaterial = ({ url }: { url: string | undefined }) => {
 type BasicShirtProps = {
   color: string
   url: string | undefined
-  onHoverChange?: (hover: boolean) => void
   objectRef?: React.MutableRefObject<Object3D<Event>[] | undefined>
+  disabled?: boolean
 }
 
-export const BasicShirt = ({ url, color, onHoverChange, objectRef }: BasicShirtProps) => {
+export const BasicShirt = ({ url, color, objectRef, disabled }: BasicShirtProps) => {
   const { nodes } = useGLTF(shirturi)
+
+  const [hover, setHover] = useState(false)
+  useCursor(hover && !disabled)
 
   return (
     <mesh
@@ -83,8 +86,8 @@ export const BasicShirt = ({ url, color, onHoverChange, objectRef }: BasicShirtP
       /** @ts-expect-error: TODO: Look into why ts thinks there is no geometry property*/
       geometry={nodes["shirt"]?.geometry}
       rotation={[0.5 * Math.PI + 0.1, 0, 0]}
-      onPointerOver={onHoverChange && (() => onHoverChange(true))}
-      onPointerOut={onHoverChange && (() => onHoverChange(false))}
+      onPointerOver={() => setHover(true)}
+      onPointerOut={() => setHover(false)}
     >
       <meshStandardMaterial color={color} roughness={1} side={DoubleSide} />
       <Decal position={[0, 1, 0]} rotation={0} scale={2}>
