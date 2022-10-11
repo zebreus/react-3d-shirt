@@ -56,7 +56,7 @@ export const ShirtControls = ({ wobbleSpeed = 0.3, wobbleRange = 0.07, disabled,
         // console.log(`Registered ${e.type} event`)
         // console.log("hovering: ", hovering)
 
-        if (hovering) {
+        if (hovering && !disabled) {
           orbit.enabled = true
           orbit?.update?.()
           e.preventDefault()
@@ -75,7 +75,7 @@ export const ShirtControls = ({ wobbleSpeed = 0.3, wobbleRange = 0.07, disabled,
         domElement.removeEventListener("contextmenu", filterInteraction, true)
       }
     }
-  }, [orbit, isHovering])
+  }, [orbit, isHovering, disabled])
 
   useFrame(state => {
     if (!active && orbit) {

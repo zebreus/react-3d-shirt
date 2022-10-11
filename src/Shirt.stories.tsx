@@ -41,11 +41,18 @@ export const WhiteShirt = () => (
   </>
 )
 
-export const DisabledShirt = () => (
-  <>
-    <Shirt disabled />
-  </>
-)
+export const DisabledShirt = () => {
+  const [disabled, setDisabled] = useState(true)
+  return (
+    <>
+      <h2>
+        State: <b>{disabled ? "disabled" : "enabled"}</b>
+      </h2>
+      <button onClick={() => setDisabled(prev => !prev)}>{disabled ? "Enable shirt!" : "Disable shirt!"}</button>
+      <Shirt disabled={disabled} />
+    </>
+  )
+}
 
 export const WobblyShirt = () => (
   <>
