@@ -31,9 +31,17 @@ export const ShirtControls = ({ wobbleSpeed = 0.3, wobbleRange = 0.07, disabled,
   useEffect(() => {
     const domElement = orbit?.domElement
     if (domElement) {
-      domElement.style.touchAction = "auto"
-      ;(domElement.firstElementChild as HTMLDivElement).style.touchAction = "auto"
-      ;(domElement.firstElementChild?.firstElementChild as HTMLCanvasElement).style.touchAction = "auto"
+      const firstChild = domElement.firstElementChild as HTMLDivElement | null
+      const canvasChild = domElement.firstElementChild?.firstElementChild as HTMLCanvasElement | null
+      if (domElement.style) {
+        domElement.style.touchAction = "auto"
+      }
+      if (firstChild && firstChild.style) {
+        firstChild.style.touchAction = "auto"
+      }
+      if (canvasChild && canvasChild.style) {
+        canvasChild.style.touchAction = "auto"
+      }
 
       const getMouse = (
         target: HTMLElement | undefined | null,
