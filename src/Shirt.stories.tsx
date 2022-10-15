@@ -35,6 +35,24 @@ export const ColoredShirt = () => (
   </>
 )
 
+export const SuspenseShirtMotif = () => (
+  <>
+    <Shirt
+      color="#000000"
+      motif="https://picsum.photos/300/300"
+      cover={<div style={{ width: "100%", height: "100%", background: "black" }}>sda</div>}
+    />
+  </>
+)
+
+export const SuspenseShirt = () => (
+  <>
+    <Shirt color="#000000" cover={<div style={{ width: "100%", height: "100%", background: "black" }}>sda</div>} />
+  </>
+)
+
+export const SuspenseShirtBlackBg = () => <div style={{ width: "100%", height: "100%", background: "black" }}>sda</div>
+
 export const WhiteShirt = () => (
   <>
     <Shirt color="#ffffff" />
