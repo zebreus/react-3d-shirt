@@ -53,7 +53,7 @@ export const Shirt = ({
   const decalMaterial = coverLoading ? <UrlMaterial url={motif} /> : <ShirtMaterial url={motif} />
 
   const coverElement = (
-    <div style={{ background: "transparent", position: "absolute", width: "100%", height: "100%", zIndex: "100" }}>
+    <div style={{ background: "transparent", position: "absolute", width: "100%", height: "100%", zIndex: "1" }}>
       {cover}
     </div>
   )
