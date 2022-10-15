@@ -2,7 +2,7 @@ import { Canvas, useThree } from "@react-three/fiber"
 import { BasicShirt } from "BasicShirt"
 import { ReactNode, Suspense, useEffect, useRef, useState } from "react"
 import { ShirtControls } from "ShirtControls"
-import { ShirtMaterial, UrlMaterial } from "ShirtMaterial"
+import { ShirtMaterial } from "ShirtMaterial"
 
 type ShirtProps = {
   /** An url to an image that is printed onto the shirt */
@@ -50,7 +50,7 @@ export const Shirt = ({
   const objectRef = useRef<THREE.Object3D<Event>[] | undefined>()
   const [ready, setReady] = useState(false)
 
-  const decalMaterial = coverLoading ? <UrlMaterial url={motif} /> : <ShirtMaterial url={motif} />
+  const decalMaterial = <ShirtMaterial url={motif} suspense={!coverLoading} />
 
   const coverElement = (
     <div style={{ background: "transparent", position: "absolute", width: "100%", height: "100%", zIndex: "1" }}>
