@@ -1,6 +1,6 @@
-import { Canvas } from "@react-three/fiber"
+import { Canvas, useThree } from "@react-three/fiber"
 import { BasicShirt } from "BasicShirt"
-import { ReactNode, Suspense, useRef, useState } from "react"
+import { ReactNode, Suspense, useEffect, useRef, useState } from "react"
 import { ShirtControls } from "ShirtControls"
 import { ShirtMaterial, UrlMaterial } from "ShirtMaterial"
 
@@ -19,6 +19,23 @@ type ShirtProps = {
   cover?: ReactNode
   /** Also display cover while loading the decal */
   coverLoading?: boolean
+}
+
+const StopClockUntilReady = ({ ready }: { ready: boolean }) => {
+  const three = useThree()
+
+  useEffect(() => {
+    if (ready) {
+      const startTimeout = setTimeout(() => {
+        three.clock.start()
+      }, 150)
+      return () => clearTimeout(startTimeout)
+    } else {
+      three.clock.stop()
+    }
+  }, [ready, three])
+
+  return null
 }
 
 export const Shirt = ({
@@ -46,6 +63,7 @@ export const Shirt = ({
       {ready ? null : coverElement}
       <Suspense fallback={coverElement}>
         <Canvas shadows onCreated={() => setReady(true)}>
+          <StopClockUntilReady ready={ready} />
           <ambientLight intensity={0.25} />
           <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
           <pointLight position={[-10, -5, -10]} />

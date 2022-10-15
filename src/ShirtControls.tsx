@@ -87,8 +87,9 @@ export const ShirtControls = ({ wobbleSpeed = 0.3, wobbleRange = 0.07, disabled,
 
   useFrame(state => {
     if (!active && orbit) {
-      const polar = Math.PI / 2 + Math.sin(state.clock.getElapsedTime() * wobbleSpeed) * wobbleRange
-      const azimuthal = Math.sin(state.clock.getElapsedTime() * wobbleSpeed * 2) * wobbleRange
+      const time = state.clock.running ? state.clock.getElapsedTime() : 0
+      const polar = Math.PI / 2 + Math.sin(time * wobbleSpeed) * wobbleRange
+      const azimuthal = Math.sin(time * wobbleSpeed * 2) * wobbleRange
       orbit.setPolarAngle?.(polar)
       orbit.setAzimuthalAngle?.(azimuthal)
     }
