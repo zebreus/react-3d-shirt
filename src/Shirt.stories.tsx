@@ -14,6 +14,40 @@ export const WithMotif = () => (
   </>
 )
 
+export const WithSmallDownMotif = () => {
+  const [baseline, setBaseline] = useState(0)
+  const [scale, setScale] = useState(1)
+
+  return (
+    <>
+      <label htmlFor="baselineInput">Baseline</label>
+      <input
+        type="range"
+        min="-1.5"
+        max="1.5"
+        step="0.1"
+        defaultValue="0"
+        onChange={e => setBaseline(+e.currentTarget.value)}
+        name="baselineInput"
+      />
+      <p>Baseline: {baseline}</p>
+      <label htmlFor="scaleInput">Scale</label>
+      <input
+        type="range"
+        min="0.1"
+        max="2"
+        step="0.1"
+        defaultValue="1"
+        onChange={e => setScale(+e.currentTarget.value)}
+        name="scaleInput"
+      />
+      <p>Scale: {scale}</p>
+
+      <Shirt motif="https://picsum.photos/300/300" motifScale={scale} motifBaseline={baseline} />
+    </>
+  )
+}
+
 export const ThreeShirtsWithMotif = () => (
   <div
     css={css`

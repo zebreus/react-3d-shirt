@@ -10,6 +10,10 @@ type BasicShirtProps = {
   disabled?: boolean
   decalMaterial: ReactNode
   decalAspect: number
+  /** Scale the decal size by this factor */
+  decalScale?: number
+  /** Set the vertical baseline of the decal (shift it up or down) */
+  decalBaseline?: number
 }
 
 let loadedNodes: Mesh | undefined
@@ -38,32 +42,39 @@ const useShirtMesh = () => {
   return mesh
 }
 
-export const BasicShirt = memo(({ color, objectRef, disabled, decalMaterial, decalAspect }: BasicShirtProps) => {
-  const gltf = useShirtMesh()
+export const BasicShirt = memo(
+  ({ color, objectRef, disabled, decalMaterial, decalAspect, decalScale = 1, decalBaseline = 0 }: BasicShirtProps) => {
+    const gltf = useShirtMesh()
 
-  const [hover, setHover] = useState(false)
-  useCursor(hover && !disabled)
+    const [hover, setHover] = useState(false)
+    useCursor(hover && !disabled)
 
-  return gltf ? (
-    <mesh
-      ref={(ref: Object3D<Event> & Mesh<BufferGeometry, Material | Material[]>) => {
-        if (objectRef) {
-          objectRef.current = [ref]
-        }
-      }}
-      castShadow
-      receiveShadow
-      scale={1}
-      // /** @ts-expect-error: TODO: Look into why ts thinks there is no geometry property*/
-      geometry={gltf?.geometry}
-      rotation={[0.5 * Math.PI + 0.1, 0, 0]}
-      onPointerOver={() => setHover(true)}
-      onPointerOut={() => setHover(false)}
-    >
-      <meshStandardMaterial color={color} roughness={1} side={DoubleSide} />
-      <Decal position={[0, 1, 0]} rotation={0} scale={[2, 2 / decalAspect, 2]}>
-        {decalMaterial}
-      </Decal>
-    </mesh>
-  ) : null
-})
+    return gltf ? (
+      <mesh
+        ref={(ref: Object3D<Event> & Mesh<BufferGeometry, Material | Material[]>) => {
+          if (objectRef) {
+            objectRef.current = [ref]
+          }
+        }}
+        castShadow
+        receiveShadow
+        scale={1}
+        // /** @ts-expect-error: TODO: Look into why ts thinks there is no geometry property*/
+        geometry={gltf?.geometry}
+        rotation={[0.5 * Math.PI + 0.1, 0, 0]}
+        onPointerOver={() => setHover(true)}
+        onPointerOut={() => setHover(false)}
+      >
+        <meshStandardMaterial color={color} roughness={1} side={DoubleSide} />
+
+        <Decal
+          position={[0, 1, -decalBaseline]}
+          rotation={[Math.PI / 2, 0, 0]}
+          scale={[2 * decalScale, (2 * decalScale) / decalAspect, 2 * decalScale]}
+        >
+          {decalMaterial}
+        </Decal>
+      </mesh>
+    ) : null
+  }
+)

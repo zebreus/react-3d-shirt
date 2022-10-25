@@ -19,6 +19,10 @@ type ShirtProps = {
   cover?: ReactNode
   /** Also display cover while loading the decal */
   coverLoading?: boolean
+  /** Scale the decal size by this factor */
+  motifScale?: number
+  /** Set the vertical baseline of the decal (shift it up or down) */
+  motifBaseline?: number
 }
 
 const StopClockUntilReady = ({ ready }: { ready: boolean }) => {
@@ -38,7 +42,16 @@ const StopClockUntilReady = ({ ready }: { ready: boolean }) => {
   return null
 }
 
-export const Shirt = ({ motif, color = "#202020", wobbleRange, wobbleSpeed, disabled, cover }: Partial<ShirtProps>) => {
+export const Shirt = ({
+  motif,
+  color = "#202020",
+  wobbleRange,
+  wobbleSpeed,
+  disabled,
+  cover,
+  motifScale,
+  motifBaseline,
+}: Partial<ShirtProps>) => {
   const objectRef = useRef<THREE.Object3D<Event>[] | undefined>()
   const [ready, setReady] = useState(false)
 
@@ -74,6 +87,8 @@ export const Shirt = ({ motif, color = "#202020", wobbleRange, wobbleSpeed, disa
               disabled={disabled}
               decalMaterial={material}
               decalAspect={aspectRatio}
+              decalScale={motifScale}
+              decalBaseline={motifBaseline}
             />
           </group>
         </Canvas>
