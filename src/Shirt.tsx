@@ -63,8 +63,6 @@ export const Shirt = ({
     </div>
   )
 
-  console.log("render1")
-
   return (
     <div style={{ background: "transparent", position: "relative", width: "100%", height: "100%" }}>
       {ready ? null : coverElement}
