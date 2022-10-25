@@ -2,7 +2,7 @@ import { Decal, useCursor } from "@react-three/drei"
 import { memo, ReactNode, useEffect, useState } from "react"
 import { shirturi } from "shirtdata"
 import { BufferGeometry, DoubleSide, Material, Mesh, Object3D } from "three"
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
 
 type BasicShirtProps = {
   color: string
