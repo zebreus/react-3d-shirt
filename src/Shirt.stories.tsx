@@ -8,6 +8,21 @@ export const DefaultShirt = () => (
   </>
 )
 
+export const ClickableShirt = () => (
+  <>
+    <button
+      onClick={() => {
+        alert("Clicked")
+      }}
+    >
+      <Shirt />
+    </button>
+    <a href={`#${Math.floor(Math.random() * 1000)}`}>
+      <Shirt />
+    </a>
+  </>
+)
+
 export const WithMotif = () => (
   <>
     <Shirt motif="https://picsum.photos/300/300" />

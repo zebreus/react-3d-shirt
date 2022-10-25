@@ -1,6 +1,6 @@
 import { OrbitControls, OrbitControlsProps } from "@react-three/drei"
 import { useFrame, useThree } from "@react-three/fiber"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Object3D, Raycaster, Vector2 } from "three"
 
 type ShirtControlsProps = {
@@ -10,9 +10,57 @@ type ShirtControlsProps = {
   disabled?: boolean
   objectRef: React.MutableRefObject<Object3D<Event>[] | undefined>
 }
+
+// function addEventListenerAll(
+//   target: HTMLElement,
+//   listener: (this: HTMLElement, ev: Event) => any,
+//   ...otherArguments: any
+// ) {
+//   // install listeners for all natively triggered events
+//   for (const key in target) {
+//     if (/^on/.test(key)) {
+//       const eventType = key.substr(2)
+//       target.addEventListener(eventType, listener, ...otherArguments)
+//     }
+//   }
+
+//   // dynamically install listeners for all manually triggered events, just-in-time before they're dispatched ;D
+//   const dispatchEvent_original = EventTarget.prototype.dispatchEvent
+//   if (!EventTarget.prototype.dispatchEventOriginal) {
+//     EventTarget.prototype.dispatchEventOriginal = dispatchEvent_original
+//   }
+//   function dispatchEvent(event: any) {
+//     target.addEventListener(event.type, listener, ...otherArguments) // multiple identical listeners are automatically discarded
+//     // @ts-expect-error: Reasons
+//     // eslint-disable-next-line prefer-rest-params
+//     dispatchEvent_original.apply(this, arguments)
+//     return false
+//   }
+//   EventTarget.prototype.dispatchEvent = dispatchEvent
+
+//   if (EventTarget.prototype.dispatchEvent !== dispatchEvent) throw new Error(`Browser is smarter than you think!`)
+// }
+
+// function removeEventListenerAll(
+//   target: HTMLElement,
+//   listener: (this: HTMLElement, ev: Event) => any,
+//   ...otherArguments: any
+// ) {
+//   // install listeners for all natively triggered events
+//   for (const key in target) {
+//     if (/^on/.test(key)) {
+//       const eventType = key.substr(2)
+//       target.removeEventListener(eventType, listener, ...otherArguments)
+//     }
+//   }
+
+//   EventTarget.prototype.dispatchEvent = EventTarget.prototype.dispatchEventOriginal
+// }
+
 export const ShirtControls = ({ wobbleSpeed = 0.3, wobbleRange = 0.07, disabled, objectRef }: ShirtControlsProps) => {
   const [orbit, setOrbit] = useState<OrbitControlsProps | null>(null)
   const [active, setActive] = useState(false)
+  const mouseDist = useRef(0)
 
   const { camera } = useThree()
 
@@ -64,23 +112,66 @@ export const ShirtControls = ({ wobbleSpeed = 0.3, wobbleRange = 0.07, disabled,
         // console.log(`Registered ${e.type} event`)
         // console.log("hovering: ", hovering)
 
-        if (hovering && !disabled) {
+        const isLeftClick = ((e as MouseEvent).button || 0) === 0
+
+        if (hovering && !disabled && isLeftClick) {
           orbit.enabled = true
           orbit?.update?.()
           e.preventDefault()
+          //e.cancelBubble = true
         } else {
           orbit.enabled = false
           orbit?.update?.()
         }
       }
 
+      const updateState = (e: MouseEvent | PointerEvent | TouchEvent) => {
+        if (e.type === "pointerdown") {
+          mouseDist.current = 0
+        }
+        if (e.type === "pointermove") {
+          mouseDist.current += Math.sqrt(
+            Math.pow((e as PointerEvent).movementX, 2) + Math.pow((e as PointerEvent).movementY, 2)
+          )
+        }
+
+        if (e.type === "pointerup") {
+          if (mouseDist.current === 0 && (e as PointerEvent).pointerType === "touch" && orbit.enabled) {
+            e.currentTarget?.dispatchEvent(new MouseEvent("click", e))
+          }
+          return
+        }
+
+        if (e.type === "click") {
+          if (mouseDist.current > 0 && orbit.enabled) {
+            e.preventDefault()
+            e.cancelBubble = true
+          }
+        }
+      }
+
       domElement.addEventListener("touchstart", filterInteraction, true)
       domElement.addEventListener("pointerdown", filterInteraction, true)
-      domElement.addEventListener("contextmenu", filterInteraction, true)
+      domElement.addEventListener("click", updateState, true)
+      domElement.addEventListener("pointerdown", updateState, true)
+      domElement.addEventListener("pointerup", updateState, true)
+      domElement.addEventListener("pointermove", updateState, true)
+
+      // const funct = event => {
+      //   if (["mousemove", "pointerrawupdate"].includes(event.type)) {
+      //     return
+      //   }
+      //   console.log("Event: ", event.type, event)
+      // }
+      // addEventListenerAll(domElement, funct, true)
       return () => {
         domElement.removeEventListener("touchstart", filterInteraction, true)
         domElement.removeEventListener("pointerdown", filterInteraction, true)
-        domElement.removeEventListener("contextmenu", filterInteraction, true)
+        domElement.removeEventListener("click", updateState, true)
+        domElement.removeEventListener("pointerdown", updateState, true)
+        domElement.removeEventListener("pointerup", updateState, true)
+        domElement.removeEventListener("pointermove", updateState, true)
+        // removeEventListenerAll(domElement, funct, true)
       }
     }
   }, [orbit, isHovering, disabled])
