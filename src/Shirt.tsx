@@ -25,6 +25,11 @@ type ShirtProps = {
   motifBaseline?: number
   /** Additional classnames */
   className?: string
+  /** Wait a few milliseconds before rendering. This can be used to make transitions smoother.
+   *
+   * In future I should look into using a offscreen canvas for this
+   */
+  renderDelay?: number
 }
 
 const StopClockUntilReady = ({ ready }: { ready: boolean }) => {
@@ -55,9 +60,20 @@ export const Shirt = ({
   motifScale,
   motifBaseline,
   className,
+  renderDelay,
 }: Partial<ShirtProps>) => {
   const objectRef = useRef<THREE.Object3D<Event>[] | undefined>()
   const [canvasReady, setCanvasReady] = useState(false)
+  const [delayReady, setDelayReady] = useState(!renderDelay)
+
+  useEffect(() => {
+    if (renderDelay) {
+      const timeout = setTimeout(() => {
+        setDelayReady(true)
+      }, renderDelay)
+      return () => clearTimeout(timeout)
+    }
+  }, [renderDelay, setDelayReady])
 
   const { material, aspectRatio, ready: materialReady } = useShirtMaterial(motif)
 
@@ -67,7 +83,7 @@ export const Shirt = ({
     </div>
   )
 
-  const ready = canvasReady && (materialReady || !coverLoading)
+  const ready = canvasReady && (materialReady || !coverLoading) && delayReady
 
   return (
     <div
@@ -75,31 +91,33 @@ export const Shirt = ({
       className={`${className}`}
     >
       {ready ? null : coverElement}
-      <Suspense fallback={coverElement}>
-        <Canvas shadows onCreated={() => setCanvasReady(true)}>
-          <StopClockUntilReady ready={ready} />
-          <ambientLight intensity={0.25} />
-          <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
-          <pointLight position={[-10, -5, -10]} />
-          <group scale={0.9}>
-            <ShirtControls
-              wobbleRange={wobbleRange}
-              wobbleSpeed={wobbleSpeed}
-              disabled={disabled}
-              objectRef={objectRef}
-            />
-            <BasicShirt
-              color={color}
-              objectRef={objectRef}
-              disabled={disabled}
-              decalMaterial={material}
-              decalAspect={aspectRatio}
-              decalScale={motifScale}
-              decalBaseline={motifBaseline}
-            />
-          </group>
-        </Canvas>
-      </Suspense>
+      {delayReady ? (
+        <Suspense fallback={coverElement}>
+          <Canvas shadows onCreated={() => setCanvasReady(true)}>
+            <StopClockUntilReady ready={ready} />
+            <ambientLight intensity={0.25} />
+            <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
+            <pointLight position={[-10, -5, -10]} />
+            <group scale={0.9}>
+              <ShirtControls
+                wobbleRange={wobbleRange}
+                wobbleSpeed={wobbleSpeed}
+                disabled={disabled}
+                objectRef={objectRef}
+              />
+              <BasicShirt
+                color={color}
+                objectRef={objectRef}
+                disabled={disabled}
+                decalMaterial={material}
+                decalAspect={aspectRatio}
+                decalScale={motifScale}
+                decalBaseline={motifBaseline}
+              />
+            </group>
+          </Canvas>
+        </Suspense>
+      ) : null}
     </div>
   )
 }
