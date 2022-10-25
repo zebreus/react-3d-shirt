@@ -1,6 +1,52 @@
 import { PerspectiveCamera, RenderTexture, useTexture } from "@react-three/drei"
 import { useFrame } from "@react-three/fiber"
-import { Component, ReactNode, Suspense, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Texture, TextureLoader } from "three"
+
+const textures: Record<string, Texture> = {}
+const texturePromises: Record<string, Promise<Texture>> = {}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const loadTextureAsync = (url: string) => {
+  if (!url) {
+    throw new Error("Url needs to be defined")
+  }
+  if (!texturePromises[url]) {
+    texturePromises[url] = new TextureLoader().loadAsync(url).then(texture => {
+      texture.flipY = false
+      textures[url] = texture
+      return texture
+    })
+  }
+
+  return texturePromises[url]
+}
+
+const useMyTexture = (url: string | undefined) => {
+  const [, setTexture] = useState<Texture | undefined>(url ? textures[url] : undefined)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    if (!url) {
+      setTexture(undefined)
+      setFailed(false)
+      return
+    }
+    const work = async () => {
+      try {
+        const t = await loadTextureAsync(url)
+        setTexture(t)
+        setFailed(false)
+      } catch (e) {
+        setTexture(undefined)
+        setFailed(true)
+      }
+    }
+    work()
+  }, [url])
+
+  const loadedTexture = url ? textures[url] : undefined
+  return { texture: loadedTexture, failed }
+}
 
 export const UrlMaterial = ({ url }: { url: string | undefined }) => {
   if (!url) {
@@ -13,8 +59,13 @@ export const UrlMaterial = ({ url }: { url: string | undefined }) => {
       t.flipY = false
     })
   })
+
+  return <TextureMaterial texture={motif} />
+}
+
+export const TextureMaterial = ({ texture }: { texture: Texture }) => {
   return (
-    <meshPhongMaterial map={motif} depthTest depthWrite={false} transparent polygonOffset polygonOffsetFactor={-4} />
+    <meshPhongMaterial map={texture} depthTest depthWrite={false} transparent polygonOffset polygonOffsetFactor={-4} />
   )
 }
 
@@ -50,37 +101,18 @@ const LoaderMaterial = ({ color }: { color?: string }) => {
   )
 }
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: boolean }> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props)
-    this.state = { error: false }
-  }
-
-  componentDidCatch(error: unknown) {
-    this.setState({
-      error: true,
-    })
-    console.error("Failed to load motif url", error)
-  }
-
-  render() {
-    if (this.state.error) {
+export const useShirtMaterial = (url: string | undefined) => {
+  const { texture, failed } = useMyTexture(url)
+  const aspectRatio = texture && !failed ? (texture?.image?.width ?? 1) / (texture?.image?.height ?? 1) : 1
+  const material = useMemo(() => {
+    if (failed) {
       return <LoaderMaterial color="firebrick" />
     }
-    return this.props.children
-  }
-}
-
-export const ShirtMaterial = ({ url, suspense }: { url: string | undefined; suspense?: boolean }) => {
-  return (
-    <ErrorBoundary>
-      {suspense ? (
-        <Suspense fallback={<LoaderMaterial />}>
-          <UrlMaterial url={url} />
-        </Suspense>
-      ) : (
-        <UrlMaterial url={url} />
-      )}
-    </ErrorBoundary>
-  )
+    if (texture) {
+      return <TextureMaterial texture={texture} />
+    }
+    return <LoaderMaterial color="goldenrod" />
+  }, [texture, failed])
+  const ready = failed || !!texture
+  return { material, aspectRatio, failed, ready }
 }

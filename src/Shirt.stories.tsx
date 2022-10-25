@@ -1,3 +1,4 @@
+import { css } from "@emotion/react"
 import { useEffect, useState } from "react"
 import { Shirt } from "Shirt"
 
@@ -13,12 +14,32 @@ export const WithMotif = () => (
   </>
 )
 
+export const ThreeShirtsWithMotif = () => (
+  <div
+    css={css`
+      display: flex;
+      flex-direction: row;
+    `}
+  >
+    <Shirt motif="https://picsum.photos/300/300" />
+    <Shirt motif="https://picsum.photos/300/300" />
+    <Shirt motif="https://picsum.photos/300/300" />
+  </div>
+)
+
+export const WithNonSquareMotif = () => (
+  <>
+    <Shirt motif="https://picsum.photos/400/600" />
+  </>
+)
+
 export const MotifLoadingTest = () => {
   const [motif, setMotif] = useState<string | undefined>(undefined)
   useEffect(() => {
-    setInterval(() => {
+    const interval = setInterval(() => {
       setMotif(prev => (prev ? undefined : "https://picsum.photos/300/300"))
     }, 5000)
+    return () => clearInterval(interval)
   })
 
   return (

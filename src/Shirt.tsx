@@ -2,7 +2,7 @@ import { Canvas, useThree } from "@react-three/fiber"
 import { BasicShirt } from "BasicShirt"
 import { ReactNode, Suspense, useEffect, useRef, useState } from "react"
 import { ShirtControls } from "ShirtControls"
-import { ShirtMaterial } from "ShirtMaterial"
+import { useShirtMaterial } from "ShirtMaterial"
 
 type ShirtProps = {
   /** An url to an image that is printed onto the shirt */
@@ -38,25 +38,19 @@ const StopClockUntilReady = ({ ready }: { ready: boolean }) => {
   return null
 }
 
-export const Shirt = ({
-  motif,
-  color = "#202020",
-  wobbleRange,
-  wobbleSpeed,
-  disabled,
-  cover,
-  coverLoading,
-}: Partial<ShirtProps>) => {
+export const Shirt = ({ motif, color = "#202020", wobbleRange, wobbleSpeed, disabled, cover }: Partial<ShirtProps>) => {
   const objectRef = useRef<THREE.Object3D<Event>[] | undefined>()
   const [ready, setReady] = useState(false)
 
-  const decalMaterial = <ShirtMaterial url={motif} suspense={!coverLoading} />
+  const { material, aspectRatio } = useShirtMaterial(motif)
 
   const coverElement = (
     <div style={{ background: "transparent", position: "absolute", width: "100%", height: "100%", zIndex: "1" }}>
       {cover}
     </div>
   )
+
+  console.log("render1")
 
   return (
     <div style={{ background: "transparent", position: "relative", width: "100%", height: "100%" }}>
@@ -74,7 +68,13 @@ export const Shirt = ({
               disabled={disabled}
               objectRef={objectRef}
             />
-            <BasicShirt color={color} objectRef={objectRef} disabled={disabled} decalMaterial={decalMaterial} />
+            <BasicShirt
+              color={color}
+              objectRef={objectRef}
+              disabled={disabled}
+              decalMaterial={material}
+              decalAspect={aspectRatio}
+            />
           </group>
         </Canvas>
       </Suspense>
