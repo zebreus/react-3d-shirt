@@ -23,6 +23,8 @@ type ShirtProps = {
   motifScale?: number
   /** Set the vertical baseline of the decal (shift it up or down) */
   motifBaseline?: number
+  /** Additional classnames */
+  className?: string
 }
 
 const StopClockUntilReady = ({ ready }: { ready: boolean }) => {
@@ -51,6 +53,7 @@ export const Shirt = ({
   cover,
   motifScale,
   motifBaseline,
+  className,
 }: Partial<ShirtProps>) => {
   const objectRef = useRef<THREE.Object3D<Event>[] | undefined>()
   const [ready, setReady] = useState(false)
@@ -64,7 +67,10 @@ export const Shirt = ({
   )
 
   return (
-    <div style={{ background: "transparent", position: "relative", width: "100%", height: "100%" }}>
+    <div
+      style={{ background: "transparent", position: "relative", width: "100%", height: "100%" }}
+      className={`${className}`}
+    >
       {ready ? null : coverElement}
       <Suspense fallback={coverElement}>
         <Canvas shadows onCreated={() => setReady(true)}>
