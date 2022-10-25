@@ -51,20 +51,23 @@ export const Shirt = ({
   wobbleSpeed,
   disabled,
   cover,
+  coverLoading,
   motifScale,
   motifBaseline,
   className,
 }: Partial<ShirtProps>) => {
   const objectRef = useRef<THREE.Object3D<Event>[] | undefined>()
-  const [ready, setReady] = useState(false)
+  const [canvasReady, setCanvasReady] = useState(false)
 
-  const { material, aspectRatio } = useShirtMaterial(motif)
+  const { material, aspectRatio, ready: materialReady } = useShirtMaterial(motif)
 
   const coverElement = (
     <div style={{ background: "transparent", position: "absolute", width: "100%", height: "100%", zIndex: "1" }}>
       {cover}
     </div>
   )
+
+  const ready = canvasReady && (materialReady || !coverLoading)
 
   return (
     <div
@@ -73,7 +76,7 @@ export const Shirt = ({
     >
       {ready ? null : coverElement}
       <Suspense fallback={coverElement}>
-        <Canvas shadows onCreated={() => setReady(true)}>
+        <Canvas shadows onCreated={() => setCanvasReady(true)}>
           <StopClockUntilReady ready={ready} />
           <ambientLight intensity={0.25} />
           <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />

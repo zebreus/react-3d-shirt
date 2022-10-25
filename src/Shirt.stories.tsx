@@ -111,13 +111,29 @@ export const SuspenseShirtMotif = () => (
       color="#000000"
       motif="https://picsum.photos/300/300"
       cover={<div style={{ width: "100%", height: "100%", background: "black" }}>sda</div>}
+      coverLoading
+    />
+  </>
+)
+
+export const SuspenseShirtDelayedMotif = () => (
+  <>
+    <Shirt
+      color="#000000"
+      motif="http://127.0.0.1:4567/500/https://picsum.photos/300/300"
+      cover={<div style={{ width: "100%", height: "100%", background: "black" }}>sda</div>}
+      coverLoading
     />
   </>
 )
 
 export const SuspenseShirt = () => (
   <>
-    <Shirt color="#000000" cover={<div style={{ width: "100%", height: "100%", background: "black" }}>sda</div>} />
+    <Shirt
+      color="#000000"
+      cover={<div style={{ width: "100%", height: "100%", background: "black" }}>sda</div>}
+      coverLoading
+    />
   </>
 )
 

@@ -113,6 +113,6 @@ export const useShirtMaterial = (url: string | undefined) => {
     }
     return <LoaderMaterial color="goldenrod" />
   }, [texture, failed])
-  const ready = failed || !!texture
+  const ready = failed || !!texture || !url
   return { material, aspectRatio, failed, ready }
 }
