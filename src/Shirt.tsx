@@ -19,6 +19,8 @@ type ShirtProps = {
   cover?: ReactNode
   /** Also display cover while loading the decal */
   coverLoading?: boolean
+  /** Also display cover while loading a changed decal */
+  coverMotifChange?: boolean
   /** Scale the decal size by this factor */
   motifScale?: number
   /** Set the vertical baseline of the decal (shift it up or down) */
@@ -38,7 +40,9 @@ const StopClockUntilReady = ({ ready }: { ready: boolean }) => {
   useEffect(() => {
     if (ready) {
       const startTimeout = setTimeout(() => {
-        three.clock.start()
+        if (!three.clock.running) {
+          three.clock.start()
+        }
       }, 150)
       return () => clearTimeout(startTimeout)
     } else {
@@ -57,6 +61,7 @@ export const Shirt = ({
   disabled,
   cover,
   coverLoading,
+  coverMotifChange,
   motifScale,
   motifBaseline,
   className,
@@ -83,7 +88,7 @@ export const Shirt = ({
     </div>
   )
 
-  const ready = canvasReady && (materialReady || !coverLoading) && delayReady
+  const ready = canvasReady && (materialReady || !coverLoading || !coverMotifChange) && delayReady
 
   return (
     <div
