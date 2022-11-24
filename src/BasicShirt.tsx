@@ -1,4 +1,5 @@
 import { Decal, useCursor } from "@react-three/drei"
+import { ShirtReadyMessage } from "OffscreenShirt"
 import { memo, ReactNode, useEffect, useState } from "react"
 import { shirturi } from "shirtdata"
 import { BufferGeometry, DoubleSide, Material, Mesh, Object3D } from "three"
@@ -45,6 +46,16 @@ const useShirtMesh = () => {
 export const BasicShirt = memo(
   ({ color, objectRef, disabled, decalMaterial, decalAspect, decalScale = 1, decalBaseline = 0 }: BasicShirtProps) => {
     const gltf = useShirtMesh()
+
+    useEffect(() => {
+      if (gltf) {
+        const message: ShirtReadyMessage = {
+          type: "setShirtReady",
+          value: true,
+        }
+        postMessage(message)
+      }
+    }, [gltf])
 
     const [hover, setHover] = useState(false)
     useCursor(hover && !disabled)

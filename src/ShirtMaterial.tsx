@@ -1,66 +1,62 @@
-import { PerspectiveCamera, RenderTexture, useTexture } from "@react-three/drei"
+import { PerspectiveCamera, RenderTexture } from "@react-three/drei"
 import { useFrame } from "@react-three/fiber"
+import { DecalReadyMessage } from "OffscreenShirt"
+import { addTextureReadyCallback, getTexture, removeTextureReadyCallback } from "processEvent"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Texture, TextureLoader } from "three"
+import { CanvasTexture, Texture } from "three"
 
-const textures: Record<string, Texture> = {}
-const texturePromises: Record<string, Promise<Texture>> = {}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const loadTextureAsync = (url: string) => {
-  if (!url) {
-    throw new Error("Url needs to be defined")
-  }
-  if (!texturePromises[url]) {
-    texturePromises[url] = new TextureLoader().loadAsync(url).then(texture => {
-      texture.flipY = false
-      textures[url] = texture
-      return texture
-    })
-  }
-
-  return texturePromises[url]
-}
-
-const useMyTexture = (url: string | undefined) => {
-  const [, setTexture] = useState<Texture | undefined>(url ? textures[url] : undefined)
-  const [failed, setFailed] = useState(false)
-  useEffect(() => {
-    if (!url) {
-      setTexture(undefined)
-      setFailed(false)
-      return
-    }
-    const work = async () => {
-      try {
-        const t = await loadTextureAsync(url)
-        setTexture(t)
-        setFailed(false)
-      } catch (e) {
-        setTexture(undefined)
-        setFailed(true)
-      }
-    }
-    work()
-  }, [url])
-
-  const loadedTexture = url ? textures[url] : undefined
-  return { texture: loadedTexture, failed }
-}
-
-export const UrlMaterial = ({ url }: { url: string | undefined }) => {
-  if (!url) {
-    throw new Promise(() => {})
-  }
-
-  const motif = useTexture(url, texture => {
-    const textures = Array.isArray(texture) ? texture : [texture]
-    textures.forEach(t => {
-      t.flipY = false
-    })
+const useTexture = (url: string | undefined) => {
+  const [texture, setTexture] = useState<Texture | undefined>(() => {
+    const imageBitmap = url && getTexture(url)
+    return imageBitmap ? new CanvasTexture(imageBitmap) : undefined
+  })
+  const [failed, setFailed] = useState(() => {
+    const imageBitmap = url && getTexture(url)
+    return imageBitmap === false
   })
 
-  return <TextureMaterial texture={motif} />
+  useEffect(() => {
+    if (!url) {
+      return
+    }
+    const callback = () => {
+      console.time("creating canvas texture")
+      const imageBitmap = getTexture(url)
+      if (imageBitmap === false) {
+        setFailed(true)
+        setTexture(undefined)
+        return
+      }
+      if (imageBitmap === undefined) {
+        setFailed(false)
+        return
+      }
+      const newTexture = new CanvasTexture(imageBitmap)
+      console.timeEnd("creating canvas texture")
+
+      setFailed(false)
+      setTexture(newTexture)
+    }
+    addTextureReadyCallback(url, callback)
+    callback()
+    return () => {
+      removeTextureReadyCallback(url, callback)
+    }
+  }, [url])
+
+  const hasTexture = !!texture
+  useEffect(() => {
+    const urlTexture = url ? getTexture(url) : undefined
+    const message: DecalReadyMessage = {
+      type: "setDecalReady",
+      value: urlTexture === false || (!!hasTexture && !!urlTexture),
+      error: urlTexture === false,
+      hasPrevious: hasTexture,
+    }
+    postMessage(message)
+  }, [url, hasTexture, failed])
+
+  return { texture, failed }
 }
 
 export const TextureMaterial = ({ texture }: { texture: Texture }) => {
@@ -102,7 +98,7 @@ const LoaderMaterial = ({ color }: { color?: string }) => {
 }
 
 export const useShirtMaterial = (url: string | undefined) => {
-  const { texture, failed } = useMyTexture(url)
+  const { texture, failed } = useTexture(url)
   const aspectRatio = texture && !failed ? (texture?.image?.width ?? 1) / (texture?.image?.height ?? 1) : 1
   const material = useMemo(() => {
     if (failed) {
