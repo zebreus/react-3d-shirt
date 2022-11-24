@@ -1,17 +1,18 @@
-import { createRoot, extend } from "@react-three/fiber"
+import { createRoot, extend, ReconcilerRoot, useThree } from "@react-three/fiber"
 import {
   CanvasReadyMessage,
+  DestroyMessage,
   InitMessage,
   InteractionMessage,
   UpdatePropsMessage,
   UpdateTextureMessage,
 } from "OffscreenShirt"
-import { useState } from "react"
 import { ShirtContent } from "Shirt"
 import { useShirtMaterial } from "ShirtMaterial"
 // eslint-disable-next-line import/no-namespace
 import * as THREE from "three"
 import { Event } from "three"
+import { setGlobalValue, useGlobalValue } from "useGlobalValue"
 
 extend(THREE)
 
@@ -76,8 +77,8 @@ class ProxyManager {
   getProxy(id: string) {
     return this.targets[id]
   }
-  handleEvent(data: { id: string; data: Record<string, unknown> & Event }) {
-    this.targets[data.id]?.handleEvent(data.data)
+  handleEvent(data: { id: string; data: Record<string, unknown> }) {
+    this.targets[data.id]?.handleEvent(data.data as Record<string, unknown> & Event)
   }
 }
 
@@ -152,9 +153,15 @@ const processUpdateTexture = ({ texture, url }: UpdateTextureMessage) => {
   textureReadyCallbacks[url]?.forEach(cb => cb())
 }
 
-export const processEvent = (event: InitMessage | UpdatePropsMessage | InteractionMessage | UpdateTextureMessage) => {
+export const processEvent = (
+  event: InitMessage | UpdatePropsMessage | InteractionMessage | UpdateTextureMessage | DestroyMessage
+) => {
   if (event.type === "init") {
     processInit(event)
+  }
+
+  if (event.type === "destroy") {
+    processDestroy(event)
   }
 
   if (event.type === "interaction") {
@@ -170,18 +177,47 @@ export const processEvent = (event: InitMessage | UpdatePropsMessage | Interacti
   }
 }
 
-const processInteraction = ({ event }: InteractionMessage) => {
-  proxyManager.handleEvent({ id: "alpha", data: event })
+const processInteraction = ({ event, canvasId }: InteractionMessage) => {
+  proxyManager.handleEvent({ id: canvasId, data: event })
 }
 
-let globalSetProps: ((props: InitMessage["props"]) => void) | undefined = undefined
-let globalInitialProps: InitMessage["props"] = {} as InitMessage["props"]
+export const useCanvasId = () => {
+  const three = useThree()
+  // @ts-expect-error: We abuse the webgl context to store the canvas id
+  return three.gl["canvasId"] as string
+}
 
-const App = () => {
-  const [props, setProps] = useState<InitMessage["props"]>(globalInitialProps)
+export const useProxyElement = () => {
+  const canvasId = useCanvasId()
+  const proxy = proxyManager.getProxy(canvasId)
+  if (!proxy) {
+    throw new Error("Proxy should exist, because we created it in init")
+  }
+  return proxy
+}
 
-  if (!globalSetProps) {
-    globalSetProps = setProps
+// let globalSetProps: ((props: InitMessage["props"]) => void) | undefined = undefined
+// let globalInitialProps: InitMessage["props"] = {} as InitMessage["props"]
+
+const setInitialProps = (canvasId: string, props: InitMessage["props"]) => {
+  setGlobalValue("shirtProps", canvasId, props)
+}
+
+const App = ({ canvasId }: { canvasId: string }) => {
+  const [props] = useGlobalValue<InitMessage["props"]>(
+    "shirtProps",
+    canvasId,
+    "invalid" as unknown as InitMessage["props"]
+  )
+  if ((props as unknown as string) === "invalid") {
+    throw new Error("Props should be set before rendering")
+  }
+
+  const three = useThree()
+  // @ts-expect-error: We abuse the webgl context to store the canvas id
+  if (three?.gl?.["canvasId"] !== canvasId) {
+    // @ts-expect-error: We abuse the webgl context to store the canvas id
+    three.gl["canvasId"] = canvasId
   }
 
   return (
@@ -197,22 +233,30 @@ const App = () => {
   )
 }
 
-const processInit = ({ canvas, width, height, pixelRatio, props }: InitMessage) => {
-  proxyManager.makeProxy({ id: "alpha" })
-  const proxy = proxyManager.getProxy("alpha")
+const roots: Record<string, ReconcilerRoot<HTMLCanvasElement>> = {}
+
+const processDestroy = ({ canvasId }: DestroyMessage) => {
+  roots[canvasId]?.unmount()
+  delete roots[canvasId]
+}
+
+const processInit = ({ canvas, width, height, pixelRatio, props, canvasId }: InitMessage) => {
+  console.log("processInit", canvasId)
+  proxyManager.makeProxy({ id: canvasId })
+  const proxy = proxyManager.getProxy(canvasId)
   if (!proxy) {
     throw new Error("Proxy should exist, because we just created it")
   }
   // // @ts-expect-error: newly defined
   // proxy["body"] = proxy
+  // // @ts-expect-error: newly defined
+  // self.window = proxy
   // @ts-expect-error: newly defined
-  self.window = proxy
-  // @ts-expect-error: newly defined
-  self.document = proxy
+  self.document = {}
   // // @ts-expect-error: newly defined
   // proxy.ownerDocument = proxy
-  // @ts-expect-error: newly defined
-  self.proxy = proxy
+  // // @ts-expect-error: newly defined
+  // self.proxy = proxy
 
   const root = createRoot(canvas as unknown as HTMLCanvasElement)
 
@@ -233,23 +277,19 @@ const processInit = ({ canvas, width, height, pixelRatio, props }: InitMessage) 
       const message: CanvasReadyMessage = {
         type: "setCanvasReady",
         value: true,
+        canvasId: canvasId,
       }
       postMessage(message)
     },
     events: undefined,
   })
 
-  globalInitialProps = props
+  setInitialProps(canvasId, props)
 
-  root.render(<App />)
+  root.render(<App canvasId={canvasId} />)
+  roots[canvasId] = root
 }
 
-const processUpdate = ({ props }: UpdatePropsMessage) => {
-  globalInitialProps = props
-  if (!globalSetProps) {
-    // Canvas is not ready yet, setting initial props should be enough
-    return
-  }
-
-  globalSetProps(props)
+const processUpdate = ({ props, canvasId }: UpdatePropsMessage) => {
+  setInitialProps(canvasId, props)
 }

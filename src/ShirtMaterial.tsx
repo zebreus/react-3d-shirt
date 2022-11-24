@@ -1,7 +1,7 @@
 import { PerspectiveCamera, RenderTexture } from "@react-three/drei"
 import { useFrame } from "@react-three/fiber"
 import { DecalReadyMessage } from "OffscreenShirt"
-import { addTextureReadyCallback, getTexture, removeTextureReadyCallback } from "processEvent"
+import { addTextureReadyCallback, getTexture, removeTextureReadyCallback, useCanvasId } from "processEvent"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { CanvasTexture, Texture } from "three"
 
@@ -45,6 +45,8 @@ const useTexture = (url: string | undefined) => {
   }, [url])
 
   const hasTexture = !!texture
+  const canvasId = useCanvasId()
+
   useEffect(() => {
     const urlTexture = url ? getTexture(url) : undefined
     const message: DecalReadyMessage = {
@@ -52,9 +54,10 @@ const useTexture = (url: string | undefined) => {
       value: urlTexture === false || (!!hasTexture && !!urlTexture),
       error: urlTexture === false,
       hasPrevious: hasTexture,
+      canvasId,
     }
     postMessage(message)
-  }, [url, hasTexture, failed])
+  }, [url, hasTexture, failed, canvasId])
 
   return { texture, failed }
 }

@@ -1,5 +1,6 @@
 import { OrbitControls, OrbitControlsProps } from "@react-three/drei"
 import { useFrame, useThree } from "@react-three/fiber"
+import { useProxyElement } from "processEvent"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Object3D, Raycaster, Vector2 } from "three"
 
@@ -129,6 +130,8 @@ export const ShirtControls = ({ wobbleSpeed = 0.3, wobbleRange = 0.07, disabled,
     }
   })
 
+  const proxy = useProxyElement()
+
   return (
     <>
       <OrbitControls
@@ -157,7 +160,7 @@ export const ShirtControls = ({ wobbleSpeed = 0.3, wobbleRange = 0.07, disabled,
         enableZoom={false}
         enablePan={false}
         // @ts-expect-error: defined in process event
-        domElement={self.proxy ?? undefined}
+        domElement={proxy ?? undefined}
       />
     </>
   )

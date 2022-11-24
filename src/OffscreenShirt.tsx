@@ -60,16 +60,24 @@ export type InitMessage = {
   pixelRatio: number
   props: WorkerProps
   type: "init"
+  canvasId: string
+}
+
+export type DestroyMessage = {
+  type: "destroy"
+  canvasId: string
 }
 
 export type UpdatePropsMessage = {
   props: WorkerProps
   type: "updateProps"
+  canvasId: string
 }
 
 export type InteractionMessage = {
-  event: Record<string, unknown> & Event
+  event: Record<string, unknown>
   type: "interaction"
+  canvasId: string
 }
 
 export type UpdateTextureMessage = {
@@ -81,11 +89,13 @@ export type UpdateTextureMessage = {
 export type ShirtReadyMessage = {
   type: "setShirtReady"
   value: boolean
+  canvasId: string
 }
 
 export type CanvasReadyMessage = {
   type: "setCanvasReady"
   value: boolean
+  canvasId: string
 }
 
 export type DecalReadyMessage = {
@@ -93,6 +103,7 @@ export type DecalReadyMessage = {
   value: boolean
   error: boolean
   hasPrevious: boolean
+  canvasId: string
 }
 
 export type OffscreenShirtCanvasProps = {
@@ -183,10 +194,13 @@ export const OffscreenShirtCanvas = ({
 
   useEffect(() => {
     const listener = (event: MessageEvent<CanvasReadyMessage | DecalReadyMessage | ShirtReadyMessage>) => {
-      if (event.data.type === "setShirtReady") {
-        setShirtReady(event.data.value)
+      if (event.data.type !== "setShirtReady") {
         return
       }
+      if (event.data.canvasId !== canvasRef.current?.id) {
+        return
+      }
+      setShirtReady(event.data.value)
     }
 
     worker.addEventListener("message", listener)
@@ -195,10 +209,13 @@ export const OffscreenShirtCanvas = ({
 
   useEffect(() => {
     const listener = (event: MessageEvent<CanvasReadyMessage | DecalReadyMessage | ShirtReadyMessage>) => {
-      if (event.data.type === "setCanvasReady") {
-        setCanvasReady(event.data.value)
+      if (event.data.type !== "setCanvasReady") {
         return
       }
+      if (event.data.canvasId !== canvasRef.current?.id) {
+        return
+      }
+      setCanvasReady(event.data.value)
     }
 
     worker.addEventListener("message", listener)
@@ -207,11 +224,14 @@ export const OffscreenShirtCanvas = ({
 
   useEffect(() => {
     const listener = (event: MessageEvent<CanvasReadyMessage | DecalReadyMessage | ShirtReadyMessage>) => {
-      if (event.data.type === "setDecalReady") {
-        setDecalReady(event.data.value)
-        setPreviousDecalReady(event.data.hasPrevious)
+      if (event.data.type !== "setDecalReady") {
         return
       }
+      if (event.data.canvasId !== canvasRef.current?.id) {
+        return
+      }
+      setDecalReady(event.data.value)
+      setPreviousDecalReady(event.data.hasPrevious)
     }
 
     worker.addEventListener("message", listener)
@@ -221,6 +241,12 @@ export const OffscreenShirtCanvas = ({
   useEffect(() => {
     if (!canvasRef.current) {
       throw new Error("shouldnt happen 1")
+    }
+    if (!canvasRef.current.id) {
+      canvasRef.current.id = new Array(30)
+        .fill(0)
+        .map(() => Math.random().toString(36)[2])
+        .join("")
     }
     const offscreenCanvas = offscreenCanvasRef.current ?? canvasRef.current?.transferControlToOffscreen()
     if (!offscreenCanvas) {
@@ -247,14 +273,47 @@ export const OffscreenShirtCanvas = ({
         decalScale: motifScale ?? 1,
         decalBaseline: motifBaseline ?? 0,
       },
+      canvasId: canvasRef.current.id,
     }
     worker.postMessage(initMessage, [offscreenCanvas])
     initRef.current = true
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [worker])
 
+  const gcIntervalRef = useRef<NodeJS.Timer>()
+  const id = canvasRef.current?.id
+  useEffect(() => {
+    if (!id) {
+      return
+    }
+    if (gcIntervalRef.current) {
+      clearInterval(gcIntervalRef.current)
+    }
+    return () => {
+      const destroyCanvas = () => {
+        if (!document.getElementById(id)) {
+          console.log("destroying canvas" + id)
+          const destroyMessage: DestroyMessage = {
+            type: "destroy",
+            canvasId: id,
+          }
+          worker.postMessage(destroyMessage)
+          clearInterval(gcInterval)
+        }
+      }
+      const gcInterval = setInterval(() => {
+        destroyCanvas
+      }, 2000)
+      destroyCanvas()
+      gcIntervalRef.current = gcInterval
+    }
+  }, [id, worker])
+
   useEffect(() => {
     if (!initRef.current) {
+      return
+    }
+    if (!canvasRef?.current?.id) {
       return
     }
     const updatePropsMessage: UpdatePropsMessage = {
@@ -268,6 +327,7 @@ export const OffscreenShirtCanvas = ({
         decalScale: motifScale ?? 1,
         decalBaseline: motifBaseline ?? 0,
       },
+      canvasId: canvasRef?.current?.id,
     }
     worker.postMessage(updatePropsMessage)
   }, [worker, motif, color, wobbleRange, wobbleSpeed, disabled, motifScale, motifBaseline])
@@ -285,28 +345,36 @@ export const OffscreenShirtCanvas = ({
   return (
     <canvas
       onClick={e => {
-        worker.postMessage({
+        const message: InteractionMessage = {
           event: prepareMouseEvent(e.nativeEvent),
           type: "interaction",
-        })
+          canvasId: e.currentTarget.id,
+        }
+        worker.postMessage(message)
       }}
       onPointerDown={e => {
-        worker.postMessage({
+        const message: InteractionMessage = {
           event: prepareMouseEvent(e.nativeEvent),
           type: "interaction",
-        })
+          canvasId: e.currentTarget.id,
+        }
+        worker.postMessage(message)
       }}
       onPointerMove={e => {
-        worker.postMessage({
+        const message: InteractionMessage = {
           event: prepareMouseEvent(e.nativeEvent),
           type: "interaction",
-        })
+          canvasId: e.currentTarget.id,
+        }
+        worker.postMessage(message)
       }}
       onPointerUp={e => {
-        worker.postMessage({
+        const message: InteractionMessage = {
           event: prepareMouseEvent(e.nativeEvent),
           type: "interaction",
-        })
+          canvasId: e.currentTarget.id,
+        }
+        worker.postMessage(message)
       }}
       style={{
         width: "100%",
