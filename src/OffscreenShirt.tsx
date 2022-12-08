@@ -57,10 +57,27 @@ export type InitMessage = {
   canvas: OffscreenCanvas
   width: number
   height: number
+  x: number
+  y: number
   pixelRatio: number
   props: WorkerProps
   type: "init"
   canvasId: string
+}
+
+export type MoveMessage = {
+  width: number
+  height: number
+  x: number
+  y: number
+  type: "move"
+  canvasId: string
+}
+
+export type WindowInfoMessage = {
+  width: number
+  height: number
+  type: "windowInfo"
 }
 
 export type DestroyMessage = {
@@ -192,6 +209,66 @@ export const OffscreenShirtCanvas = ({
   const offscreenCanvasRef = useRef<OffscreenCanvas>()
   const initRef = useRef<boolean>(false)
 
+  // Ensure window resize observer
+  useEffect(() => {
+    // @ts-expect-error: We stick the window observer to the worker to prevent it from being garbage collected and to make sure we only have one observer per worker
+    if (worker && !worker["resizeObserver"]) {
+      // TODO: Check that this is only called once on initializiation
+      const updateWindowInfo = () => {
+        const windowResizeMessage: WindowInfoMessage = {
+          type: "windowInfo",
+          width: window.innerWidth, //entry.contentRect.width,
+          height: window.innerHeight, //entry.contentRect.height,
+        }
+        worker.postMessage(windowResizeMessage)
+      }
+
+      const observer = new ResizeObserver(entries => {
+        const entry = entries[0]
+        if (!entry) {
+          throw new Error("no entry?")
+        }
+        updateWindowInfo()
+      })
+
+      // Update window info on initial load to initialize
+      // updateWindowInfo()
+
+      // @ts-expect-error: We stick the window observer to the worker to prevent it from being garbage collected and to make sure we only have one observer per worker
+      worker["resizeObserver"] = observer
+      observer.observe(document.body)
+    }
+  }, [worker])
+
+  // Add canvas resize Observer
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) {
+      return
+    }
+    if (!worker) {
+      return
+    }
+    const updatePosition = () => {
+      const rect = canvas.getBoundingClientRect()
+      const moveMessage: MoveMessage = {
+        type: "move",
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y,
+        canvasId: canvas.id,
+      }
+      worker.postMessage(moveMessage)
+    }
+    const observer = new ResizeObserver(() => {
+      updatePosition()
+    })
+    observer.observe(canvas)
+    return () => observer.disconnect()
+  }, [worker])
+
+  // Relay shirt ready state
   useEffect(() => {
     const listener = (event: MessageEvent<CanvasReadyMessage | DecalReadyMessage | ShirtReadyMessage>) => {
       if (event.data.type !== "setShirtReady") {
@@ -207,6 +284,7 @@ export const OffscreenShirtCanvas = ({
     return () => worker.removeEventListener("message", listener)
   }, [setShirtReady, worker])
 
+  // Relay canvas ready state
   useEffect(() => {
     const listener = (event: MessageEvent<CanvasReadyMessage | DecalReadyMessage | ShirtReadyMessage>) => {
       if (event.data.type !== "setCanvasReady") {
@@ -222,6 +300,7 @@ export const OffscreenShirtCanvas = ({
     return () => worker.removeEventListener("message", listener)
   }, [setCanvasReady, worker])
 
+  // Relay decal ready state
   useEffect(() => {
     const listener = (event: MessageEvent<CanvasReadyMessage | DecalReadyMessage | ShirtReadyMessage>) => {
       if (event.data.type !== "setDecalReady") {
@@ -238,6 +317,7 @@ export const OffscreenShirtCanvas = ({
     return () => worker.removeEventListener("message", listener)
   }, [setDecalReady, setPreviousDecalReady, worker])
 
+  // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current) {
       throw new Error("shouldnt happen 1")
@@ -248,6 +328,7 @@ export const OffscreenShirtCanvas = ({
         .map(() => Math.random().toString(36)[2])
         .join("")
     }
+
     const offscreenCanvas = offscreenCanvasRef.current ?? canvasRef.current?.transferControlToOffscreen()
     if (!offscreenCanvas) {
       throw new Error("shouldnt happen 2")
@@ -258,10 +339,13 @@ export const OffscreenShirtCanvas = ({
     if (initRef.current) {
       return
     }
+    const rect = canvasRef.current.getBoundingClientRect()
     const initMessage: InitMessage = {
       canvas: offscreenCanvas,
-      width: canvasRef.current?.clientWidth,
-      height: canvasRef.current?.clientHeight,
+      width: rect.width,
+      height: rect.height,
+      x: rect.x,
+      y: rect.y,
       pixelRatio: window.devicePixelRatio,
       type: "init",
       props: {
@@ -280,6 +364,7 @@ export const OffscreenShirtCanvas = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [worker])
 
+  // Destroy canvas
   const gcIntervalRef = useRef<NodeJS.Timer>()
   const id = canvasRef.current?.id
   useEffect(() => {
@@ -309,6 +394,7 @@ export const OffscreenShirtCanvas = ({
     }
   }, [id, worker])
 
+  // Update canvas props
   useEffect(() => {
     if (!initRef.current) {
       return
@@ -332,6 +418,7 @@ export const OffscreenShirtCanvas = ({
     worker.postMessage(updatePropsMessage)
   }, [worker, motif, color, wobbleRange, wobbleSpeed, disabled, motifScale, motifBaseline])
 
+  // Upload texture
   useEffect(() => {
     if (!initRef.current) {
       return
@@ -380,6 +467,8 @@ export const OffscreenShirtCanvas = ({
         width: "100%",
         height: "100%",
       }}
+      height={800}
+      width={664}
       ref={canvasRef}
     />
   )

@@ -1,20 +1,19 @@
-import { createRoot, extend, ReconcilerRoot, useThree } from "@react-three/fiber"
 import {
-  CanvasReadyMessage,
   DestroyMessage,
   InitMessage,
   InteractionMessage,
+  MoveMessage,
   UpdatePropsMessage,
   UpdateTextureMessage,
+  WindowInfoMessage,
 } from "OffscreenShirt"
-import { ShirtContent } from "Shirt"
-import { useShirtMaterial } from "ShirtMaterial"
+import { setScreenSize } from "rendering/render"
+import { addSubcanvas, removeSubcanvas, updateSubcanvas, updateSubcanvasProps } from "rendering/subcanvas"
+import { processUpdateTexture } from "rendering/textures"
+
 // eslint-disable-next-line import/no-namespace
 import * as THREE from "three"
 import { Event } from "three"
-import { setGlobalValue, useGlobalValue } from "useGlobalValue"
-
-extend(THREE)
 
 function noop() {}
 
@@ -84,77 +83,58 @@ class ProxyManager {
 
 const proxyManager = new ProxyManager()
 
-export const OffscreenShirtContent = ({
-  decalUrl,
-  color = "#202020",
-  wobbleRange,
-  wobbleSpeed,
-  disabled,
-  decalScale,
-  decalBaseline,
-}: {
-  /** An url to an image that is printed onto the shirt */
-  decalUrl?: string
-  /** The shirt color */
-  color?: string
-  /** How much the camera wobbles */
-  wobbleRange?: number
-  /** How fast the camera wobbles */
-  wobbleSpeed?: number
-  /** Disable interaction */
-  disabled?: boolean
-  /** Scale the decal size by this factor */
-  decalScale?: number
-  /** Set the vertical baseline of the decal (shift it up or down) */
-  decalBaseline?: number
-}) => {
-  const { material, aspectRatio, ready: materialReady } = useShirtMaterial(decalUrl)
+// export const OffscreenShirtContent = ({
+//   decalUrl,
+//   color = "#202020",
+//   wobbleRange,
+//   wobbleSpeed,
+//   disabled,
+//   decalScale,
+//   decalBaseline,
+// }: {
+//   /** An url to an image that is printed onto the shirt */
+//   decalUrl?: string
+//   /** The shirt color */
+//   color?: string
+//   /** How much the camera wobbles */
+//   wobbleRange?: number
+//   /** How fast the camera wobbles */
+//   wobbleSpeed?: number
+//   /** Disable interaction */
+//   disabled?: boolean
+//   /** Scale the decal size by this factor */
+//   decalScale?: number
+//   /** Set the vertical baseline of the decal (shift it up or down) */
+//   decalBaseline?: number
+// }) => {
+//   const { material, aspectRatio, ready: materialReady } = useShirtMaterial(decalUrl)
 
-  const ready = materialReady
+//   const ready = materialReady
 
-  return (
-    <ShirtContent
-      ready={ready}
-      wobbleRange={wobbleRange}
-      wobbleSpeed={wobbleSpeed}
-      color={color}
-      disabled={disabled}
-      decalMaterial={material}
-      decalAspect={aspectRatio}
-      decalScale={decalScale}
-      decalBaseline={decalBaseline}
-    />
-  )
-}
-
-const textureBitmap: Record<string, ImageBitmap | undefined | false> = {}
-const textureReadyCallbacks: Record<string, Array<() => void> | undefined> = {}
-
-export const getTexture = (url: string) => {
-  return textureBitmap[url]
-}
-
-export const addTextureReadyCallback = (url: string, cb: () => void) => {
-  if (!textureReadyCallbacks[url]) {
-    textureReadyCallbacks[url] = []
-  }
-  textureReadyCallbacks[url]?.push(cb)
-}
-
-export const removeTextureReadyCallback = (url: string, cb: () => void) => {
-  const index = textureReadyCallbacks[url]?.indexOf(cb)
-  if (index !== undefined && index !== -1) {
-    textureReadyCallbacks[url]?.splice(index, 1)
-  }
-}
-
-const processUpdateTexture = ({ texture, url }: UpdateTextureMessage) => {
-  textureBitmap[url] = texture
-  textureReadyCallbacks[url]?.forEach(cb => cb())
-}
+//   return (
+//     <ShirtContent
+//       ready={ready}
+//       wobbleRange={wobbleRange}
+//       wobbleSpeed={wobbleSpeed}
+//       color={color}
+//       disabled={disabled}
+//       decalMaterial={material}
+//       decalAspect={aspectRatio}
+//       decalScale={decalScale}
+//       decalBaseline={decalBaseline}
+//     />
+//   )
+// }
 
 export const processEvent = (
-  event: InitMessage | UpdatePropsMessage | InteractionMessage | UpdateTextureMessage | DestroyMessage
+  event:
+    | InitMessage
+    | UpdatePropsMessage
+    | InteractionMessage
+    | UpdateTextureMessage
+    | DestroyMessage
+    | WindowInfoMessage
+    | MoveMessage
 ) => {
   if (event.type === "init") {
     processInit(event)
@@ -175,121 +155,131 @@ export const processEvent = (
   if (event.type === "updateTexture") {
     processUpdateTexture(event)
   }
+
+  if (event.type === "windowInfo") {
+    setScreenSize(event)
+  }
+
+  if (event.type === "move") {
+    processMove(event)
+  }
 }
 
 const processInteraction = ({ event, canvasId }: InteractionMessage) => {
   proxyManager.handleEvent({ id: canvasId, data: event })
 }
 
-export const useCanvasId = () => {
-  const three = useThree()
-  // @ts-expect-error: We abuse the webgl context to store the canvas id
-  return three.gl["canvasId"] as string
-}
+/**
+// export const useCanvasId = () => {
+//   const three = useThree()
+//   // @ts-expect-error: We abuse the webgl context to store the canvas id
+//   return three.gl["canvasId"] as string
+// }
 
-export const useProxyElement = () => {
-  const canvasId = useCanvasId()
-  const proxy = proxyManager.getProxy(canvasId)
-  if (!proxy) {
-    throw new Error("Proxy should exist, because we created it in init")
-  }
-  return proxy
-}
+// export const useProxyElement = () => {
+//   const canvasId = useCanvasId()
+//   const proxy = proxyManager.getProxy(canvasId)
+//   if (!proxy) {
+//     throw new Error("Proxy should exist, because we created it in init")
+//   }
+//   return proxy
+// }
 
 // let globalSetProps: ((props: InitMessage["props"]) => void) | undefined = undefined
 // let globalInitialProps: InitMessage["props"] = {} as InitMessage["props"]
 
-const setInitialProps = (canvasId: string, props: InitMessage["props"]) => {
-  setGlobalValue("shirtProps", canvasId, props)
-}
+// const setInitialProps = (canvasId: string, props: InitMessage["props"]) => {
+//   setGlobalValue("shirtProps", canvasId, props)
+// }
 
-const App = ({ canvasId }: { canvasId: string }) => {
-  const [props] = useGlobalValue<InitMessage["props"]>(
-    "shirtProps",
-    canvasId,
-    "invalid" as unknown as InitMessage["props"]
-  )
-  if ((props as unknown as string) === "invalid") {
-    throw new Error("Props should be set before rendering")
-  }
+// const App = ({ canvasId }: { canvasId: string }) => {
+//   const [props] = useGlobalValue<InitMessage["props"]>(
+//     "shirtProps",
+//     canvasId,
+//     "invalid" as unknown as InitMessage["props"]
+//   )
+//   if ((props as unknown as string) === "invalid") {
+//     throw new Error("Props should be set before rendering")
+//   }
 
-  const three = useThree()
-  // @ts-expect-error: We abuse the webgl context to store the canvas id
-  if (three?.gl?.["canvasId"] !== canvasId) {
-    // @ts-expect-error: We abuse the webgl context to store the canvas id
-    three.gl["canvasId"] = canvasId
-  }
+//   const three = useThree()
+//   // @ts-expect-error: We abuse the webgl context to store the canvas id
+//   if (three?.gl?.["canvasId"] !== canvasId) {
+//     // @ts-expect-error: We abuse the webgl context to store the canvas id
+//     three.gl["canvasId"] = canvasId
+//   }
 
-  return (
-    <OffscreenShirtContent
-      color={props.color}
-      disabled={props.disabled}
-      decalUrl={props.motif}
-      decalBaseline={props.decalBaseline}
-      decalScale={props.decalScale}
-      wobbleRange={props.wobbleRange}
-      wobbleSpeed={props.wobbleSpeed}
-    />
-  )
-}
+//   return (
+//     <OffscreenShirtContent
+//       color={props.color}
+//       disabled={props.disabled}
+//       decalUrl={props.motif}
+//       decalBaseline={props.decalBaseline}
+//       decalScale={props.decalScale}
+//       wobbleRange={props.wobbleRange}
+//       wobbleSpeed={props.wobbleSpeed}
+//     />
+//   )
+// }
 
-const roots: Record<string, ReconcilerRoot<HTMLCanvasElement>> = {}
+// const roots: Record<string, ReconcilerRoot<HTMLCanvasElement>> = {}
+ */
 
 const processDestroy = ({ canvasId }: DestroyMessage) => {
-  roots[canvasId]?.unmount()
-  delete roots[canvasId]
+  removeSubcanvas(canvasId)
 }
 
-const processInit = ({ canvas, width, height, pixelRatio, props, canvasId }: InitMessage) => {
+const processInit = ({ canvas, width, height, props, canvasId, x, y }: InitMessage) => {
   console.log("processInit", canvasId)
   proxyManager.makeProxy({ id: canvasId })
   const proxy = proxyManager.getProxy(canvasId)
   if (!proxy) {
     throw new Error("Proxy should exist, because we just created it")
   }
-  // // @ts-expect-error: newly defined
-  // proxy["body"] = proxy
-  // // @ts-expect-error: newly defined
-  // self.window = proxy
   // @ts-expect-error: newly defined
   self.document = {}
-  // // @ts-expect-error: newly defined
-  // proxy.ownerDocument = proxy
-  // // @ts-expect-error: newly defined
-  // self.proxy = proxy
-
-  const root = createRoot(canvas as unknown as HTMLCanvasElement)
 
   proxy.width = width
   proxy.height = height
 
-  root.configure({
-    size: {
-      width,
-      height,
-      top: 0,
-      left: 0,
-      updateStyle: false,
-    },
-    dpr: pixelRatio, // important
-    onCreated: state => {
-      state.events.connect?.(proxy)
-      const message: CanvasReadyMessage = {
-        type: "setCanvasReady",
-        value: true,
-        canvasId: canvasId,
-      }
-      postMessage(message)
-    },
-    events: undefined,
+  addSubcanvas({
+    id: canvasId,
+    canvas: canvas,
+    width: width,
+    height: height,
+    x: x,
+    y: y,
+    props: props,
   })
 
-  setInitialProps(canvasId, props)
-
-  root.render(<App canvasId={canvasId} />)
-  roots[canvasId] = root
+  // root.configure({
+  //   size: {
+  //     width,
+  //     height,
+  //     top: 0,
+  //     left: 0,
+  //     updateStyle: false,
+  //   },
+  //   dpr: pixelRatio, // important
+  //   onCreated: state => {
+  //     state.events.connect?.(proxy)
+  //     const message: CanvasReadyMessage = {
+  //       type: "setCanvasReady",
+  //       value: true,
+  //       canvasId: canvasId,
+  //     }
+  //     postMessage(message)
+  //   },
+  //   events: undefined,
+  // })
 }
 
 const processUpdate = ({ props, canvasId }: UpdatePropsMessage) => {
-  setInitialProps(canvasId, props)
+  // setInitialProps(canvasId, props)
+  updateSubcanvasProps(canvasId, props)
+}
+
+const processMove = ({ width, height, x, y, canvasId }: MoveMessage) => {
+  console.log("processMove", canvasId, width, height, x, y)
+  updateSubcanvas(canvasId, { width, height, x, y })
 }

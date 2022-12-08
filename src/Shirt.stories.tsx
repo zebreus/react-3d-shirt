@@ -1,12 +1,77 @@
 import { css } from "@emotion/react"
+import { OffscreenShirt } from "OffscreenShirt"
 import { useEffect, useState } from "react"
-import { Shirt } from "Shirt"
+import { useWorker } from "useWorker"
+// @ts-expect-error: This is a test image
+import testimageUrl from "./testimage.png"
 
-export const DefaultShirt = () => (
-  <>
-    <Shirt />
-  </>
-)
+export const DefaultShirt = () => {
+  const [toggle, setToggle] = useState(false)
+  const worker = useWorker(false)
+  console.log(testimageUrl)
+  return (
+    <>
+      <button onClick={() => setToggle(!toggle)}>Toggle</button>
+      <div
+        css={css`
+          height: ${toggle ? "400px" : "800px"};
+          position: relative;
+        `}
+      >
+        <OffscreenShirt worker={worker} motif={testimageUrl} />
+      </div>
+    </>
+  )
+}
+
+export const AlphaQuadTest = () => {
+  const worker = useWorker(false)
+  console.log(worker)
+  const [shirtColor, setShirtColor] = useState("white")
+  return (
+    <>
+      <button onClick={() => setShirtColor(color => (color === "white" ? "green" : "white"))}>Toggle color</button>
+
+      <div
+        css={css`
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: 400px 400px;
+          grid-gap: 10px;
+        `}
+      >
+        <div
+          css={css`
+            background: red;
+          `}
+        >
+          <OffscreenShirt worker={worker} color={shirtColor} />
+        </div>
+        <div
+          css={css`
+            background: green;
+          `}
+        >
+          <OffscreenShirt worker={worker} />
+        </div>
+        <div
+          css={css`
+            background: blue;
+          `}
+        >
+          <OffscreenShirt worker={worker} />
+        </div>
+        <div
+          css={css`
+            background: yellow;
+          `}
+        >
+          <OffscreenShirt worker={worker} />
+        </div>
+      </div>
+    </>
+  )
+}
 
 export const ClickableShirt = () => (
   <>
@@ -15,17 +80,17 @@ export const ClickableShirt = () => (
         alert("Clicked")
       }}
     >
-      <Shirt />
+      <OffscreenShirt />
     </button>
     <a href={`#${Math.floor(Math.random() * 1000)}`}>
-      <Shirt />
+      <OffscreenShirt />
     </a>
   </>
 )
 
 export const WithMotif = () => (
   <>
-    <Shirt motif="https://picsum.photos/300/300" />
+    <OffscreenShirt motif="https://picsum.photos/300/300" />
   </>
 )
 
@@ -58,7 +123,7 @@ export const WithSmallDownMotif = () => {
       />
       <p>Scale: {scale}</p>
 
-      <Shirt motif="https://picsum.photos/300/300" motifScale={scale} motifBaseline={baseline} />
+      <OffscreenShirt motif="https://picsum.photos/300/300" motifScale={scale} motifBaseline={baseline} />
     </>
   )
 }
@@ -70,15 +135,15 @@ export const ThreeShirtsWithMotif = () => (
       flex-direction: row;
     `}
   >
-    <Shirt motif="https://picsum.photos/300/300" />
-    <Shirt motif="https://picsum.photos/300/300" />
-    <Shirt motif="https://picsum.photos/300/300" />
+    <OffscreenShirt motif="https://picsum.photos/300/300" />
+    <OffscreenShirt motif="https://picsum.photos/300/300" />
+    <OffscreenShirt motif="https://picsum.photos/300/300" />
   </div>
 )
 
 export const WithNonSquareMotif = () => (
   <>
-    <Shirt motif="https://picsum.photos/400/600" />
+    <OffscreenShirt motif="https://picsum.photos/400/600" />
   </>
 )
 
@@ -94,20 +159,20 @@ export const MotifLoadingTest = () => {
   return (
     <>
       <h3>{motif ? motif : "none"}</h3>
-      <Shirt motif={motif} />
+      <OffscreenShirt motif={motif} />
     </>
   )
 }
 
 export const ColoredShirt = () => (
   <>
-    <Shirt color="#ff0000" />
+    <OffscreenShirt color="#ff0000" />
   </>
 )
 
 export const SuspenseShirtMotif = () => (
   <>
-    <Shirt
+    <OffscreenShirt
       color="#000000"
       motif="https://picsum.photos/300/300"
       cover={<div style={{ width: "100%", height: "100%", background: "black" }}>sda</div>}
@@ -118,7 +183,7 @@ export const SuspenseShirtMotif = () => (
 
 export const SuspenseShirtDelayedMotif = () => (
   <>
-    <Shirt
+    <OffscreenShirt
       color="#000000"
       motif="http://127.0.0.1:4567/500/https://picsum.photos/300/300"
       cover={<div style={{ width: "100%", height: "100%", background: "black" }}>sda</div>}
@@ -129,7 +194,7 @@ export const SuspenseShirtDelayedMotif = () => (
 
 export const SuspenseShirt = () => (
   <>
-    <Shirt
+    <OffscreenShirt
       color="#000000"
       cover={<div style={{ width: "100%", height: "100%", background: "black" }}>sda</div>}
       coverLoading
@@ -141,7 +206,7 @@ export const SuspenseShirtBlackBg = () => <div style={{ width: "100%", height: "
 
 export const WhiteShirt = () => (
   <>
-    <Shirt color="#ffffff" />
+    <OffscreenShirt color="#ffffff" />
   </>
 )
 
@@ -153,20 +218,20 @@ export const DisabledShirt = () => {
         State: <b>{disabled ? "disabled" : "enabled"}</b>
       </h2>
       <button onClick={() => setDisabled(prev => !prev)}>{disabled ? "Enable shirt!" : "Disable shirt!"}</button>
-      <Shirt disabled={disabled} />
+      <OffscreenShirt disabled={disabled} />
     </>
   )
 }
 
 export const WobblyShirt = () => (
   <>
-    <Shirt wobbleRange={0.2} wobbleSpeed={1} />
+    <OffscreenShirt wobbleRange={0.2} wobbleSpeed={1} />
   </>
 )
 
 export const ScrollableShirt = () => (
   <>
-    <Shirt color="#ffffff" />
+    <OffscreenShirt color="#ffffff" />
     <div
       style={{
         height: 800,
